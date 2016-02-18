@@ -15,7 +15,8 @@ model {
     android.ndk {
         moduleName = "gl2jni"
         stl = "gnustl_shared"
-        cppFlags.addAll(["-Werror","-std=c++11","-fexceptions","-frtti"])
+        cppFlags.addAll(["-Werror","-std=c++11","-fexceptions","-frtti",
+                         "-I${file("src/main/FlappyCxx/src")}".toString()])
         ldLibs.addAll(["log", "GLESv2"])
     }
 

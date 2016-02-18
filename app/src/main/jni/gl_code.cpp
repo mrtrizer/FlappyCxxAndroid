@@ -21,105 +21,38 @@
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#include <core/gltools.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#define  LOG_TAG    "libgl2jni"
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#include <core/gworldview.h>
+#include <core/gworldmodel.h>
+#include <shapes/gobjcircle.h>
+#include <core/gobjcamera.h>
+#include <shapes/gobjrect.h>
 
-static void printGLString(const char *name, GLenum s) {
-    const char *v = (const char *) glGetString(s);
-    LOGI("GL %s = %s\n", name, v);
-}
+std::shared_ptr<GWorldModel> gWorldModel;
+std::shared_ptr<GWorldView> gWorldView;
 
-static void checkGlError(const char* op) {
-    for (GLint error = glGetError(); error; error
-            = glGetError()) {
-        LOGI("after %s() glError (0x%x)\n", op, error);
+/// Moving circle for test scene
+class TestCircle : public GObjCircle {
+public:
+    using GObjCircle::GObjCircle;
+
+    void recalc(DeltaT) override {
+        n += 0.001;
+        this->getPosR().x += std::sin(n) / 50.0;
+        this->getPosR().y += std::cos(n) / 50.0;
+        if (intersectObjList().size() > 0)
+            setColorRGBA({1.0f, 0, 0, 0});
+        else
+            setColorRGBA({1.0f, 1.0f, 1.0f, 1.0f});
     }
-}
-
-static const char gVertexShader[] = 
-    "attribute vec4 vPosition;\n"
-    "void main() {\n"
-    "  gl_Position = vPosition;\n"
-    "}\n";
-
-static const char gFragmentShader[] = 
-    "precision mediump float;\n"
-    "void main() {\n"
-    "  gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n"
-    "}\n";
-
-GLuint loadShader(GLenum shaderType, const char* pSource) {
-    GLuint shader = glCreateShader(shaderType);
-    if (shader) {
-        glShaderSource(shader, 1, &pSource, NULL);
-        glCompileShader(shader);
-        GLint compiled = 0;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-        if (!compiled) {
-            GLint infoLen = 0;
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-            if (infoLen) {
-                char* buf = (char*) malloc(infoLen);
-                if (buf) {
-                    glGetShaderInfoLog(shader, infoLen, NULL, buf);
-                    LOGE("Could not compile shader %d:\n%s\n",
-                            shaderType, buf);
-                    free(buf);
-                }
-                glDeleteShader(shader);
-                shader = 0;
-            }
-        }
-    }
-    return shader;
-}
-
-GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
-    GLuint vertexShader = loadShader(GL_VERTEX_SHADER, pVertexSource);
-    if (!vertexShader) {
-        return 0;
-    }
-
-    GLuint pixelShader = loadShader(GL_FRAGMENT_SHADER, pFragmentSource);
-    if (!pixelShader) {
-        return 0;
-    }
-
-    GLuint program = glCreateProgram();
-    if (program) {
-        glAttachShader(program, vertexShader);
-        checkGlError("glAttachShader");
-        glAttachShader(program, pixelShader);
-        checkGlError("glAttachShader");
-        glLinkProgram(program);
-        GLint linkStatus = GL_FALSE;
-        glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
-        if (linkStatus != GL_TRUE) {
-            GLint bufLength = 0;
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufLength);
-            if (bufLength) {
-                char* buf = (char*) malloc(bufLength);
-                if (buf) {
-                    glGetProgramInfoLog(program, bufLength, NULL, buf);
-                    LOGE("Could not link program:\n%s\n", buf);
-                    free(buf);
-                }
-            }
-            glDeleteProgram(program);
-            program = 0;
-        }
-    }
-    return program;
-}
-
-GLuint gProgram;
-GLuint gvPositionHandle;
+private:
+    float n = 0;
+};
 
 bool setupGraphics(int w, int h) {
     printGLString("Version", GL_VERSION);
@@ -127,45 +60,33 @@ bool setupGraphics(int w, int h) {
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
 
-    LOGI("setupGraphics(%d, %d)", w, h);
-    gProgram = createProgram(gVertexShader, gFragmentShader);
-    if (!gProgram) {
-        LOGE("Could not create program.");
-        return false;
-    }
-    gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
-    checkGlError("glGetAttribLocation");
-    LOGI("glGetAttribLocation(\"vPosition\") = %d\n",
-            gvPositionHandle);
+    gWorldModel = std::make_shared<GWorldFlappy>();
+    gWorldView = std::make_shared<GWorldView>(gWorldModel);
 
-    glViewport(0, 0, w, h);
-    checkGlError("glViewport");
+    //Fill scene with objects
+    auto gObjSubContainer1 = gWorldModel->getRoot()->ADD_CHILD(GObj,POS(0,0,0));
+    auto gObjSubContainer2 = gObjSubContainer1->ADD_CHILD(GObj,POS(-15,0,0));
+    gObjSubContainer1->ADD_CHILD(GObjRect,20,20,POS(-10,-10,0));
+    gObjSubContainer2->ADD_CHILD(TestCircle,4,POS(-20,-20,0));
+    gObjSubContainer2->ADD_CHILD(TestCircle,6,POS(20,-20,0));
+    gObjSubContainer2->ADD_CHILD(TestCircle,8,POS(-20,20,0));
+    gObjSubContainer2->ADD_CHILD(TestCircle,10,POS(20,20,0));
+    auto gObjCamera = std::make_shared<GObjCamera>(100,1.0,GObj::Pos({0,0,0}));
+    gWorldModel->getRoot()->addChild<GObjCamera>(gObjCamera);
+    gWorldModel->setActiveCamera(gObjCamera);
+
+    gWorldView->resize(w, h);
+    gWorldView->init();
+
     return true;
 }
 
-const GLfloat gTriangleVertices[] = { 0.0f, 0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f };
-
 void renderFrame() {
-    static float grey;
-    grey += 0.01f;
-    if (grey > 1.0f) {
-        grey = 0.0f;
+    if (gWorldView != nullptr) {
+        gWorldView->redraw();
     }
-    glClearColor(grey, grey, grey, 1.0f);
-    checkGlError("glClearColor");
-    glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    checkGlError("glClear");
-
-    glUseProgram(gProgram);
-    checkGlError("glUseProgram");
-
-    glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
-    checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(gvPositionHandle);
-    checkGlError("glEnableVertexAttribArray");
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    checkGlError("glDrawArrays");
+    if (gWorldModel != nullptr)
+        gWorldModel->run(); //only for test
 }
 
 extern "C" {
@@ -175,7 +96,10 @@ extern "C" {
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
-    setupGraphics(width, height);
+    if (gWorldView != nullptr)
+        gWorldView->resize(width, height);
+    else
+        setupGraphics(width, height);
 }
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj)
