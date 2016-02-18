@@ -1,0 +1,3 @@
+[submodule "app/src/main/FlappyCxx"]
+	path = app/src/main/FlappyCxx
+	url = https://github.com/mrtrizer/FlappyCxx.git

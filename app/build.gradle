@@ -14,9 +14,22 @@ model {
 
     android.ndk {
         moduleName = "gl2jni"
-        cppFlags.add("-Werror")
+        stl = "gnustl_shared"
+        cppFlags.addAll(["-Werror","-std=c++11","-fexceptions","-frtti"])
         ldLibs.addAll(["log", "GLESv2"])
     }
+
+    android.sources {
+        main {
+            jni {
+                source {
+                    srcDirs 'src/main/FlappyCxx/src','src/main/jni'
+                }
+            }
+        }
+    }
+
+    //source.main.jni.srcDirs = ["src/main/jni", "src/main/FlappyCxx"]
 
     android.buildTypes {
         release {
