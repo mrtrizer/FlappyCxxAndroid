@@ -19,6 +19,7 @@ package com.android.gl2jni;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.WindowManager;
 
 import java.io.File;
@@ -27,6 +28,12 @@ import java.io.File;
 public class GL2JNIActivity extends Activity {
 
     GL2JNIView mView;
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        GL2JNILib.click((int)event.getX(), (int)event.getY());
+        return true;
+    }
 
     @Override protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);

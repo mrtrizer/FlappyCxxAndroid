@@ -27,82 +27,49 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <core/gworldview.h>
-#include <core/gworldmodel.h>
-#include <shapes/gobjcircle.h>
-#include <core/gobjcamera.h>
-#include <shapes/gobjrect.h>
+#include <flappyctrl.h>
 
-std::shared_ptr<GWorldModel> gWorldModel;
-std::shared_ptr<GWorldView> gWorldView;
+FlappyCtrl flappyCtrl;
 
-/// Moving circle for test scene
-class TestCircle : public GObjCircle {
-public:
-    using GObjCircle::GObjCircle;
+void setupGraphics(int w, int h) {
+    static bool initFlag = false;
 
-    void recalc(DeltaT) override {
-        n += 0.001;
-        this->getPosR().x += std::sin(n) / 50.0;
-        this->getPosR().y += std::cos(n) / 50.0;
-        if (intersectObjList().size() > 0)
-            setColorRGBA({1.0f, 0, 0, 0});
-        else
-            setColorRGBA({1.0f, 1.0f, 1.0f, 1.0f});
-    }
-private:
-    float n = 0;
-};
+    if (initFlag)
+        return;
 
-bool setupGraphics(int w, int h) {
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
     printGLString("Extensions", GL_EXTENSIONS);
 
-    gWorldModel = std::make_shared<GWorldFlappy>();
-    gWorldView = std::make_shared<GWorldView>(gWorldModel);
-
-    //Fill scene with objects
-    auto gObjSubContainer1 = gWorldModel->getRoot()->ADD_CHILD(GObj,POS(0,0,0));
-    auto gObjSubContainer2 = gObjSubContainer1->ADD_CHILD(GObj,POS(-15,0,0));
-    gObjSubContainer1->ADD_CHILD(GObjRect,20,20,POS(-10,-10,0));
-    gObjSubContainer2->ADD_CHILD(TestCircle,4,POS(-20,-20,0));
-    gObjSubContainer2->ADD_CHILD(TestCircle,6,POS(20,-20,0));
-    gObjSubContainer2->ADD_CHILD(TestCircle,8,POS(-20,20,0));
-    gObjSubContainer2->ADD_CHILD(TestCircle,10,POS(20,20,0));
-    auto gObjCamera = std::make_shared<GObjCamera>(100,1.0,GObj::Pos({0,0,0}));
-    gWorldModel->getRoot()->addChild<GObjCamera>(gObjCamera);
-    gWorldModel->setActiveCamera(gObjCamera);
-
-    gWorldView->resize(w, h);
-    gWorldView->init();
-
-    return true;
+    flappyCtrl.init();
+    flappyCtrl.resize(w, h);
+    initFlag = true;
 }
 
 void renderFrame() {
-    if (gWorldView != nullptr) {
-        gWorldView->redraw();
-    }
-    if (gWorldModel != nullptr)
-        gWorldModel->run(); //only for test
+    flappyCtrl.glRedraw();
+    flappyCtrl.step();
 }
 
 extern "C" {
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y);
 };
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
-    if (gWorldView != nullptr)
-        gWorldView->resize(width, height);
-    else
-        setupGraphics(width, height);
+    setupGraphics(width, height);
+    flappyCtrl.resize(width, height);
 }
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jobject obj)
 {
     renderFrame();
+}
+
+JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y)
+{
+    flappyCtrl.mouseClick(x,y);
 }
