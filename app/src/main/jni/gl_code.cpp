@@ -37,7 +37,7 @@ jclass gClass;
 class GLViewFactoryAndroid : public GLViewFactory {
 public:
     virtual std::shared_ptr<GLTexture> getGLTexture(std::string name) const override {
-        char const *path = "bird.png";
+        char const *path = name.data();
         jmethodID mid;
         mid = gEnv->GetStaticMethodID(gClass, "loadBitmap",
                                  "(Ljava/lang/String;)Landroid/graphics/Bitmap;");
@@ -46,6 +46,7 @@ public:
         gEnv->DeleteLocalRef(pathUTF);
         gEnv->NewGlobalRef(bitmap);
 
+        LOGI("Name: %s",path);
         mid = gEnv->GetMethodID(gEnv->GetObjectClass(bitmap),"getWidth","()I");
         int width = gEnv->CallIntMethod(bitmap,mid);
         LOGI("Width: %d",width);
@@ -58,73 +59,54 @@ public:
         mid = gEnv->GetMethodID(gEnv->GetObjectClass(bitmap),"getPixels","([IIIIIII)V");
         gEnv->CallVoidMethod(bitmap,mid,array,0,width,0,0,width,height);
         jint *pixels = gEnv->GetIntArrayElements(array, 0);
-//        gEnv->ReleaseIntArrayElements(array, pixels, 0);
-//        gEnv->DeleteGlobalRef(array);
-//        gEnv->DeleteGlobalRef(png);
+        gEnv->ReleaseIntArrayElements(array, pixels, 0);
+        gEnv->DeleteGlobalRef(array);
+        gEnv->DeleteGlobalRef(bitmap);
 
-        char * bits = new char[64 * 64 * 4]();
-        for (int i = 0; i < 64 * 64; i++)
-            *(unsigned int *)&bits[i * 4] = 0xff00ffff;
+
         auto result = std::make_shared<GLTexture>((char*)pixels, width, height);
         return result;
     }
 };
 
-std::shared_ptr<GLWorldView> gWorld;
+std::shared_ptr<GLWorldView> gWorldView;
 std::shared_ptr<Ctrl> flappyCtrl;
-
-void setupGraphics(int w, int h) {
-    gWorld = std::make_shared<GLWorldView>(std::make_shared<GLViewFactoryAndroid>());
-    flappyCtrl = std::make_shared<Ctrl>(gWorld);
-
-    static bool initFlag = false;
-
-    if (initFlag)
-        return;
-
-    printGLString("Version", GL_VERSION);
-    printGLString("Vendor", GL_VENDOR);
-    printGLString("Renderer", GL_RENDERER);
-    printGLString("Extensions", GL_EXTENSIONS);
-
-    flappyCtrl->init();
-    flappyCtrl->resize(w, h);
-    initFlag = true;
-}
-
-void renderFrame() {
-    flappyCtrl->glRedraw();
-    flappyCtrl->step();
-}
 
 extern "C" {
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jclass obj);
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y);
+    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_preinit(JNIEnv * env, jclass jClass);
 };
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
-{
-    LOGI("1");
-    setupGraphics(width, height);
-    flappyCtrl->resize(width, height);
+JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height) {
+    LOGI("init");
+    gWorldView = std::make_shared<GLWorldView>(std::make_shared<GLViewFactoryAndroid>());
+    flappyCtrl->setView(gWorldView);
+    gWorldView->resize(width, height);
+    printGLString("Version", GL_VERSION);
+    printGLString("Vendor", GL_VENDOR);
+    printGLString("Renderer", GL_RENDERER);
+    printGLString("Extensions", GL_EXTENSIONS);
 }
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jclass cla)
-{
+JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jclass jClass) {
+    LOGI("step");
     gEnv = env;
-    gClass = cla;
-    LOGI("1");
-    renderFrame();
+    gClass = jClass;
+    flappyCtrl->step();
+    gWorldView->redraw();
 }
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y)
-{
-    LOGI("2");
+JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y) {
+    LOGI("click");
     flappyCtrl->mouseClick(x,y);
 }
-//
-////https://habrahabr.ru/post/222997/
-//JNIEXPORT void JNICALL JavaCritical_com_android_gl2jni_GL2JNILib_createTexture(jint width, jint height, jbyte* buf) {
-//
-//}
+
+JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_preinit(JNIEnv * env, jclass jClass) {
+    LOGI("preinit");
+    if (flappyCtrl != nullptr)
+        return;
+    flappyCtrl = std::make_shared<Ctrl>();
+    flappyCtrl->init();
+}

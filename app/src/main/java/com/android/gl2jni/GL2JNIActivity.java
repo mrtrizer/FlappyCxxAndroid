@@ -37,6 +37,9 @@ public class GL2JNIActivity extends Activity {
 
     @Override protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        GL2JNILib.amgr = getResources();
+        GL2JNILib.packageName = getPackageName();
+        GL2JNILib.preinit();
         mView = new GL2JNIView(getApplication());
 	setContentView(mView);
     }

@@ -19,6 +19,7 @@ package com.android.gl2jni;
 // Wrapper for native library
 
 import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -32,10 +33,13 @@ public class GL2JNILib {
 
     public static native void init(int width, int height);
     public static native void step();
+    public static native void preinit();
     public static native void click(int x, int y);
     public static Bitmap loadBitmap(String path) {
         try {
-            return BitmapFactory.decodeStream(amgr.open(path));
+            //return BitmapFactory.decodeStream(amgr.open(path));
+            //return BitmapFactory.decodeResource(amgr,id);
+            return BitmapFactory.decodeResource(amgr,amgr.getIdentifier(path,"drawable",packageName));
         } catch (Exception e) { }
         Bitmap bitmap = Bitmap.createBitmap(64,64, Bitmap.Config.ARGB_8888);
         bitmap.setPixel(10,10, Color.RED);
@@ -44,5 +48,6 @@ public class GL2JNILib {
         return bitmap;
     }
 
-    private static AssetManager amgr;
+    public static Resources amgr;
+    public static String packageName;
 }
