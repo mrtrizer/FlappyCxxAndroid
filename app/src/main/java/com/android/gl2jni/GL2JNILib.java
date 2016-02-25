@@ -18,17 +18,31 @@ package com.android.gl2jni;
 
 // Wrapper for native library
 
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+
 public class GL2JNILib {
 
      static {
+         System.loadLibrary("gnustl_shared");
          System.loadLibrary("gl2jni");
      }
 
-    /**
-     * @param width the current view width
-     * @param height the current view height
-     */
-     public static native void init(int width, int height);
-     public static native void step();
-     public static native void click(int x, int y);
+    public static native void init(int width, int height);
+    public static native void step();
+    public static native void click(int x, int y);
+    public static Bitmap loadBitmap(String path) {
+        try {
+            return BitmapFactory.decodeStream(amgr.open(path));
+        } catch (Exception e) { }
+        Bitmap bitmap = Bitmap.createBitmap(64,64, Bitmap.Config.ARGB_8888);
+        bitmap.setPixel(10,10, Color.RED);
+        bitmap.setPixel(10,11, Color.RED);
+        bitmap.setPixel(10,12, Color.RED);
+        return bitmap;
+    }
+
+    private static AssetManager amgr;
 }
