@@ -22,6 +22,11 @@ model {
 
     android.sources {
         main {
+            res {
+                source {
+                    srcDirs 'src/main/FlappyCxx/res','src/main/res'
+                }
+            }
             jni {
                 source {
                     srcDirs 'src/main/FlappyCxx/src','src/main/jni'

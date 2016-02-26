@@ -31,7 +31,8 @@ public class GL2JNIActivity extends Activity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        GL2JNILib.click((int)event.getX(), (int)event.getY());
+        if (event.getAction() == MotionEvent.ACTION_DOWN)
+            GL2JNILib.click((int)event.getX(), (int)event.getY());
         return true;
     }
 
@@ -39,7 +40,6 @@ public class GL2JNIActivity extends Activity {
         super.onCreate(icicle);
         GL2JNILib.amgr = getResources();
         GL2JNILib.packageName = getPackageName();
-        GL2JNILib.preinit();
         mView = new GL2JNIView(getApplication());
 	setContentView(mView);
     }

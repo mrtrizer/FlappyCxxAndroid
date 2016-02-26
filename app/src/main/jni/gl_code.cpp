@@ -33,6 +33,7 @@
 
 JNIEnv * gEnv = 0;
 jclass gClass;
+pthread_mutex_t lock;
 
 class GLViewFactoryAndroid : public GLViewFactory {
 public:
@@ -60,8 +61,6 @@ public:
         gEnv->CallVoidMethod(bitmap,mid,array,0,width,0,0,width,height);
         jint *pixels = gEnv->GetIntArrayElements(array, 0);
         gEnv->ReleaseIntArrayElements(array, pixels, 0);
-        gEnv->DeleteGlobalRef(array);
-        gEnv->DeleteGlobalRef(bitmap);
 
 
         auto result = std::make_shared<GLTexture>((char*)pixels, width, height);
@@ -72,41 +71,42 @@ public:
 std::shared_ptr<GLWorldView> gWorldView;
 std::shared_ptr<Ctrl> flappyCtrl;
 
+void preinit() {
+    if (flappyCtrl != nullptr)
+        return;
+    LOGI("preinit");
+    flappyCtrl = std::make_shared<Ctrl>();
+    flappyCtrl->init();
+}
+
 extern "C" {
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jclass obj);
     JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y);
-    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_preinit(JNIEnv * env, jclass jClass);
 };
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height) {
     LOGI("init");
+    preinit();
     gWorldView = std::make_shared<GLWorldView>(std::make_shared<GLViewFactoryAndroid>());
     flappyCtrl->setView(gWorldView);
     gWorldView->resize(width, height);
-    printGLString("Version", GL_VERSION);
-    printGLString("Vendor", GL_VENDOR);
-    printGLString("Renderer", GL_RENDERER);
-    printGLString("Extensions", GL_EXTENSIONS);
+    gWorldView->init();
 }
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jclass jClass) {
     LOGI("step");
     gEnv = env;
     gClass = jClass;
+    pthread_mutex_lock(&lock);
     flappyCtrl->step();
+    pthread_mutex_unlock(&lock);
     gWorldView->redraw();
 }
 
 JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y) {
     LOGI("click");
+    pthread_mutex_lock(&lock);
     flappyCtrl->mouseClick(x,y);
-}
-
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_preinit(JNIEnv * env, jclass jClass) {
-    LOGI("preinit");
-    if (flappyCtrl != nullptr)
-        return;
-    flappyCtrl = std::make_shared<Ctrl>();
-    flappyCtrl->init();
+    pthread_mutex_unlock(&lock);
 }
