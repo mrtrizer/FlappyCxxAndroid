@@ -6,7 +6,7 @@ model {
         buildToolsVersion = "23.0.2"
 
         defaultConfig.with {
-            applicationId    = "com.android.gl2jni"
+            applicationId    = "com.android.flappycxx"
             minSdkVersion.apiLevel    = 5
             targetSdkVersion.apiLevel = 23
         }

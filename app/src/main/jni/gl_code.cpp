@@ -75,6 +75,7 @@ void preinit() {
     if (flappyCtrl != nullptr)
         return;
     LOGI("preinit");
+    pthread_mutex_init(&lock, NULL);
     flappyCtrl = std::make_shared<Ctrl>();
     flappyCtrl->init();
 }
