@@ -5,3 +5,5 @@ The project contains a submodule FlappyCxx written on C++. To clone with submodu
 	git clone https://github.com/mrtrizer/FlappyCxxAndroid.git
 	cd FlappyCxxAndroid
 	git submodule update --init
+
+The most of C++ source is located here: https://github.com/mrtrizer/FlappyCxx
