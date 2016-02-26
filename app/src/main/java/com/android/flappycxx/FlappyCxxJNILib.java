@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package com.android.gl2jni;
+package com.android.flappycxx;
 
 // Wrapper for native library
 
-import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 
-public class GL2JNILib {
+public class FlappyCxxJNILib {
 
      static {
          System.loadLibrary("gnustl_shared");
-         System.loadLibrary("gl2jni");
+         System.loadLibrary("flappycxx");
      }
 
     public static native void init(int width, int height);
     public static native void step();
-    public static native void preinit();
     public static native void click(int x, int y);
     public static Bitmap loadBitmap(String path) {
         try {

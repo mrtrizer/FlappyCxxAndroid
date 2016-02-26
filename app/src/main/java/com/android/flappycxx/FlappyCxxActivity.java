@@ -14,33 +14,29 @@
  * limitations under the License.
  */
 
-package com.android.gl2jni;
+package com.android.flappycxx;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
-import android.view.WindowManager;
-
-import java.io.File;
 
 
-public class GL2JNIActivity extends Activity {
+public class FlappyCxxActivity extends Activity {
 
-    GL2JNIView mView;
+    FlappyCxxGLView mView;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN)
-            GL2JNILib.click((int)event.getX(), (int)event.getY());
+            FlappyCxxJNILib.click((int) event.getX(), (int) event.getY());
         return true;
     }
 
     @Override protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
-        GL2JNILib.amgr = getResources();
-        GL2JNILib.packageName = getPackageName();
-        mView = new GL2JNIView(getApplication());
+        FlappyCxxJNILib.amgr = getResources();
+        FlappyCxxJNILib.packageName = getPackageName();
+        mView = new FlappyCxxGLView(getApplication());
 	setContentView(mView);
     }
 

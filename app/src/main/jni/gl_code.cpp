@@ -80,12 +80,12 @@ void preinit() {
 }
 
 extern "C" {
-    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
-    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jclass obj);
-    JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y);
+    JNIEXPORT void JNICALL Java_com_android_flappycxx_FlappyCxxJNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
+    JNIEXPORT void JNICALL Java_com_android_flappycxx_FlappyCxxJNILib_step(JNIEnv * env, jclass obj);
+    JNIEXPORT void JNICALL Java_com_android_flappycxx_FlappyCxxJNILib_click(JNIEnv * env, jobject obj, jint x, jint y);
 };
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height) {
+JNIEXPORT void JNICALL Java_com_android_flappycxx_FlappyCxxJNILib_init(JNIEnv * env, jobject obj,  jint width, jint height) {
     LOGI("init");
     preinit();
     gWorldView = std::make_shared<GLWorldView>(std::make_shared<GLViewFactoryAndroid>());
@@ -94,7 +94,7 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_init(JNIEnv * env, jobj
     gWorldView->init();
 }
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jclass jClass) {
+JNIEXPORT void JNICALL Java_com_android_flappycxx_FlappyCxxJNILib_step(JNIEnv * env, jclass jClass) {
     LOGI("step");
     gEnv = env;
     gClass = jClass;
@@ -104,7 +104,7 @@ JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_step(JNIEnv * env, jcla
     gWorldView->redraw();
 }
 
-JNIEXPORT void JNICALL Java_com_android_gl2jni_GL2JNILib_click(JNIEnv * env, jobject obj, jint x, jint y) {
+JNIEXPORT void JNICALL Java_com_android_flappycxx_FlappyCxxJNILib_click(JNIEnv * env, jobject obj, jint x, jint y) {
     LOGI("click");
     pthread_mutex_lock(&lock);
     flappyCtrl->mouseClick(x,y);
